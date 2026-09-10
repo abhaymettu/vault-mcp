@@ -73,6 +73,17 @@ def test_symlink_escape_refused(vault):
         vault.read("link.md")
 
 
+def test_symlink_escape_hidden_from_search_and_list(vault):
+    # Regression: a symlink to a file outside the vault used to be listed and
+    # searched (leaking its text) even though read() refused it.
+    (vault.root / "link.md").symlink_to(vault.root.parent / "secret.md")
+    assert "link.md" not in [n["path"] for n in vault.list()]
+    assert "link.md" not in [h["file"] for h in vault.search("secret")]
+    # A symlink whose target is inside the vault is still fine.
+    (vault.root / "inner.md").symlink_to(vault.root / "alpha.md")
+    assert "inner.md" in [n["path"] for n in vault.list()]
+
+
 def test_append_daily_creates_then_appends(vault):
     now = dt.datetime(2026, 9, 10, 10, 41)
     r1 = vault.append_daily("hello", now)
